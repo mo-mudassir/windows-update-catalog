@@ -1,0 +1,80 @@
+name: Build catalog
+
+# Every 6 hours, and hourly on days 8 to 16 of the month, which cover Patch Tuesday and the days after it when
+# out-of-band fixes appear. Can also be started by hand.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+    - cron: "47 * 8-16 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: catalog
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Read Microsoft Learn and MSRC
+        id: update
+        run: |
+          set +e
+          python3 tool/catalog_update.py --force | tee update.log
+          echo "code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish when every check passed
+        if: steps.update.outputs.code == '0'
+        run: |
+          python3 tool/publish.py | tee publish.log
+          if grep -q '^Published' publish.log; then
+            git config user.name "catalog-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add tool/release_catalog.json catalog manifest.json
+            git commit -m "Publish catalog: $(head -c 200 publish.log)"
+            git push
+          else
+            git checkout -- tool/release_catalog.json
+          fi
+
+      - name: Open a review pull request when a check failed
+        if: steps.update.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$(gh pr list --label catalog-review --state open --json number --jq '.[].number')" ]; then
+            echo "A catalog review is already open; not opening another."; exit 0
+          fi
+          branch="catalog-review-$(date -u +%Y%m%d-%H%M)"
+          git switch -c "$branch"
+          python3 - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("tool/release_catalog.pending.json")
+          cat = json.loads(p.read_text())
+          problems = cat.pop("problems", [])
+          cat["stale"] = False
+          pathlib.Path("tool/release_catalog.json").write_text(json.dumps(cat, indent=2) + "\n")
+          pathlib.Path("review.md").write_text(
+              "The scheduled build found changes that need a person to check them before they are published.\n\n"
+              "## Problems found\n\n" + "\n".join(f"- {x}" for x in problems) +
+              "\n\n## Before merging\n\nCheck each problem against Microsoft Learn or the MSRC API. "
+              "Merging publishes this catalog to every dashboard. Close the pull request to reject it.\n")
+          p.unlink()
+          PY
+          git config user.name "catalog-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tool/release_catalog.json
+          git commit -m "Catalog proposal that needs review"
+          git push -u origin "$branch"
+          gh label create catalog-review --color D93F0B --description "Catalog change that needs a person to check it" 2>/dev/null || true
+          gh pr create --title "Catalog review needed $(date -u +%Y-%m-%d)" --body-file review.md --label catalog-review

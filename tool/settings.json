@@ -1,0 +1,6 @@
+{
+  "catalog": {
+    "publication_grace_days": 2,
+    "retained_cycles": 12
+  }
+}

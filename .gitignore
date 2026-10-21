@@ -1,0 +1,5 @@
+__pycache__/
+*.log
+review.md
+tool/release_catalog.pending.json
+data/
