@@ -34,6 +34,22 @@ MSRC = "https://api.msrc.microsoft.com/cvrf/v3.0/cvrf/{}"
 KEEP_MONTHS = json.loads((APP / "settings.json").read_text()).get("catalog", {}).get("retained_cycles", 12)
 PLIST = pathlib.Path.home() / "Library" / "LaunchAgents" / "io.github.windows-update-catalog.plist"
 MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+# General-release names and end dates for versions that share their build with an LTSC edition, used only when the
+# Learn release-information tables no longer list the general release (Microsoft drops the row once it retires, and
+# keeps only the LTSC row). Without them the whole build would look like LTSC and a plain Pro or Enterprise device on it
+# would get the LTSC end date. Last day of support, from Microsoft's lifecycle pages (dates there are 6:59:59 AM PT on
+# the next day), checked 2026-10-21:
+#   https://learn.microsoft.com/en-us/lifecycle/products/windows-10-home-and-pro
+#   https://learn.microsoft.com/en-us/lifecycle/products/windows-10-enterprise-and-education
+# Last day of each commercial Extended Security Updates year, per Windows 10 release with ESU. The dashboard counts a
+# device as covered only on a build from the current ESU year. From Microsoft's Windows 10 ESU lifecycle (Year 1 to 3):
+#   https://learn.microsoft.com/en-us/windows/whats-new/extended-security-updates
+ESU_YEAR_ENDS = {"19045": ["2026-10-13", "2027-10-12", "2028-10-10"]}
+GA_SHARED_WITH_LTSC = {
+    "19044": dict(name="10 21H2", available="2021-11-16", end_pro="2023-06-13", end_enterprise="2024-06-11"),
+    "17763": dict(name="10 1809", available="2018-11-13", end_pro="2020-11-10", end_enterprise="2021-05-11"),
+    "14393": dict(name="10 1607", available="2016-08-02", end_pro="2018-04-10", end_enterprise="2019-04-09"),
+}
 
 
 def fetch(url, accept="text/html", timeout=30):
@@ -299,8 +315,15 @@ def build_catalog(old, today):
                 if le["mainstream"] and le["extended"] and le["iot_only"]: entry.update(end=le["mainstream"], iot_end=le["extended"])
                 elif le["extended"]: entry["end"] = le["extended"]
                 elif end: entry["end"] = end
-                if base not in rel or rel[base].get("ltsc") or not rel[base].get("end_enterprise"):   # LTSC build, or its GA edition ended long ago
-                    rel.setdefault(base, {}).update(name=entry["name"], ltsc=True, end_enterprise=entry["end"], end_pro=entry["end"])
+                # The release entry is the general release; the LTSC edition lives only in ltsc_in_name, as for 26100.
+                # When Learn no longer lists the general release, take it from GA_SHARED_WITH_LTSC. Only a build with no
+                # known general release is marked LTSC as a whole.
+                ga = GA_SHARED_WITH_LTSC.get(base)
+                r_ = rel.setdefault(base, {})
+                if ga and (r_.get("ltsc") or not r_.get("end_enterprise")):
+                    r_.pop("ltsc", None); r_.update(ga)
+                elif not ga and (r_.get("ltsc") or not r_.get("end_enterprise")):
+                    r_.update(name=entry["name"], ltsc=True, end_enterprise=entry["end"], end_pro=entry["end"])
 
     # A version Microsoft marks "End of updates" without an end date takes the date of its last security update as its
     # end, marked end_estimated, so it counts as out of support instead of having no support date.
@@ -329,6 +352,7 @@ def build_catalog(old, today):
         before = [x for x in bs if x[0] <= end]; after = [x for x in bs if x[0] > end]
         if before: e["final_free_build"], e["final_free_kb"], e["final_free_date"] = f"{base}.{before[-1][1]}", before[-1][2], before[-1][0]
         if after and e.get("esu"): e["esu_from_rev"] = after[0][1]
+        if e.get("esu") and base in ESU_YEAR_ENDS: e["esu_year_ends"] = ESU_YEAR_ENDS[base]
 
     # ---- monthly cycles from Learn rows ----
     released = sorted({m for _, t, m, d, _, _ in rows if t == "B" and d and d <= today.isoformat()})
@@ -408,13 +432,15 @@ def build_catalog(old, today):
     # classified from the title (kb_kind); results are kept in kb_lookups, so a KB is read only once. Out-of-band fixes
     # are filed under the month whose Patch Tuesday they follow. Hand-added hotpatch_oob entries still apply as overrides.
     known = {k for c in cyc.values() for s in c["streams"].values() for k in [s.get("kb")] + s.get("oob", []) + [(s.get("preview") or {}).get("kb"), (s.get("hotpatch") or {}).get("kb")] if k}
-    look = dict(old.get("kb_lookups") or {})
+    # A lookup saved with nothing read from it (no builds, no date, kind "other") came from a page that loaded without a
+    # readable title. It is not final: drop it so it is read again.
+    look = {k: e for k, e in (old.get("kb_lookups") or {}).items() if e.get("builds") or e.get("date") or e.get("kind") != "other"}
     cand = [(k, "msrc") for m in sorted(cyc) for k in sorted(cyc[m].get("msrc_kbs") or ())] + [(k, "devices") for k in sorted(device_kbs())]
     n_look = 0
     for kb, src in cand:
         if kb in known or kb in look or n_look >= MAX_LOOKUPS: continue
         builds, date, title = kb_page(kb); n_look += 1
-        if title is None: continue                      # unreadable now: try again on the next run
+        if not title: continue                          # unreadable now, or loaded with no readable title: try again on the next run
         look[kb] = dict(kind=kb_kind(title), builds=builds or [], date=date, source=src)
     rel_ = sorted((c["release_date"], m) for m, c in cyc.items() if c.get("release_date"))
     month_for = lambda d: max([m for r_, m in rel_ if r_ <= d], default=None) if d else None
@@ -440,7 +466,13 @@ def build_catalog(old, today):
             for k in ("hotpatch_oob", "hotpatch_oob_revs", "note"):       # hand-added overrides, kept; found ones are merged in above
                 if k in o: s[k] = sorted(set(s.get(k, [])) | set(o[k])) if isinstance(o[k], list) else dict(o[k], **(s.get(k) or {})) if isinstance(o[k], dict) else o[k]
             for k, v in (o.get("oob_dates") or {}).items(): s.setdefault("oob_dates", {}).setdefault(k, v)
-            if set(o.get("oob", [])) - set(s.get("oob", [])): s["oob"] = sorted(set(s.get("oob", [])) | set(o["oob"]))
+            gone = set(o.get("oob", [])) - set(s.get("oob", []))
+            if gone:                                    # an out-of-band fix no longer in the source: keep its KB, build and date together
+                s["oob"] = sorted(set(s.get("oob", [])) | gone)
+                for kb in sorted(gone):
+                    r_ = (o.get("oob_revs") or {}).get(kb)
+                    if r_ is None: continue
+                    s.setdefault("oob_revs", {}).setdefault(kb, r_); kbb.setdefault(month, {}).setdefault(kb, set()).add(f"{base}.{r_}")
         # Hotpatch out-of-band fixes are not in the Learn tables: their builds and date come from the KB article, once.
         for kb in sorted({k for s in c["streams"].values() for k in s.get("hotpatch_oob", [])}):
             if all(kb in (s.get("hotpatch_oob_revs") or {}) for s in c["streams"].values() if kb in s.get("hotpatch_oob", [])): continue
@@ -468,7 +500,7 @@ def build_catalog(old, today):
                 hp = s["hotpatch"]; lb.setdefault(str(hp["rev"]), f"{mn} {'baseline' if hp['restart'] else 'hotpatch'}")
                 if not hp["restart"]: comp.setdefault(hp["kb"], f"{mn} {y} hotpatch")
         out_cycles[month] = dict(label=f"{month} security update", release_date=c["release_date"], streams=c["streams"],
-                                 companions=comp, revision_labels=labels, cves=c.get("cves", {}),
+                                 companions=comp, revision_labels=labels, cves=c.get("cves", {}), cves_arch="x64",
                                  kb_builds={kb: sorted(bs, key=lambda x: -int(x.split(".")[0])) for kb, bs in sorted(kbb.get(month, {}).items())})
     # Shared-KB siblings: versions that got the same KB in any kept month are one servicing line. queries.py uses this
     # to give a version with no Patch Tuesday entry this month the target revision of a sibling that has one.
@@ -480,7 +512,9 @@ def build_catalog(old, today):
     new.update(
         _about="Built by tool/catalog_update.py from Microsoft Learn release information and the MSRC security update API. "
                "Version entries are never deleted; monthly entries are kept for the last 12 released cycles. kb_builds lists every KB of a month with the builds it applies to; "
-               "servicing_siblings lists versions that share a KB (one servicing line, same revision numbers). Edit feature_target by hand.",
+               "servicing_siblings lists versions that share a KB (one servicing line, same revision numbers). "
+               "CVE counts per KB (cycles.*.cves) come from the MSRC products 'Windows 10/11 Version ... for x64-based Systems' only (cves_arch); "
+               "ARM64 and 32-bit products can differ. Edit feature_target by hand.",
         schema=2, checked_utc=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         current_cycle=cur or old.get("current_cycle"), cycles=out_cycles or old.get("cycles", {}),
         releases=dict(sorted(rel.items(), key=lambda kv: -int(kv[0]))), ltsc_in_name=ltsc,
@@ -503,8 +537,9 @@ def build_catalog(old, today):
             if fresh.get("total", 0) < cv.get("total", 0) or known - set(fresh.get("all_ids") or []):
                 problems.append(f"{month} {kb}: previously recorded CVEs disappeared")
     if stale_reason(new, today): problems.append(stale_reason(new, today))
-    if problems: new.update(stale=True, checked_utc=old.get("checked_utc"))
-    else: new["stale"] = False
+    # A proposal keeps this run's check time: it is only installed or published after a person reviews it, and an
+    # accepted review is as fresh as the check behind it.
+    new["stale"] = bool(problems)
     return new, problems
 
 

@@ -1,7 +1,9 @@
 """Publish tool/release_catalog.json for the dashboards: catalog/catalog-<version>.json and manifest.json.
 
-A new version is written only when the catalog content changed. A run that only moves checked_utc forward keeps the
-current version, so the repository does not grow on every scheduled check. Standard library only.
+A new version is written when the catalog content changed, or when the published one was last checked RECHECK_DAYS or
+more ago. A run that only moves checked_utc forward otherwise keeps the current version, so the repository does not
+grow on every scheduled check. Dashboards read the check time from the catalog they install and warn after 7 days
+(catalog_max_age_days), so without the second rule a month with no changes would look unchecked. Standard library only.
 
   python3 tool/publish.py          publish if changed; prints the result
 """
@@ -11,6 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "tool" / "release_catalog.json"
 OUT = ROOT / "catalog"
 MANIFEST = ROOT / "manifest.json"
+RECHECK_DAYS = 3
 
 
 def content_key(cat):
@@ -24,7 +27,10 @@ def main():
         print("Not published: the catalog is marked stale or has open problems."); return 1
     old = json.loads(MANIFEST.read_text()) if MANIFEST.exists() else {}
     key = content_key(cat)
-    if old.get("content_key") == key:
+    def when(s): return dt.datetime.fromisoformat(s.replace("Z", "+00:00")) if s else None
+    checked, published = when(cat.get("checked_utc")), when(old.get("checked_utc"))
+    recheck = bool(checked and published and checked - published >= dt.timedelta(days=RECHECK_DAYS))
+    if old.get("content_key") == key and not recheck:
         print(f"Unchanged: version {old.get('version')} is current."); return 0
     version = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H%MZ")
     body = (json.dumps(cat, indent=2) + "\n").encode()
