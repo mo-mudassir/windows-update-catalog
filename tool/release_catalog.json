@@ -19379,7 +19379,7 @@
     }
   },
   "schema": 2,
-  "checked_utc": "2026-11-03T13:26:57Z",
+  "checked_utc": "2026-11-06T19:24:57Z",
   "sources": [
     "https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information",
     "https://learn.microsoft.com/en-us/windows/release-health/release-information",
@@ -30170,6 +30170,13 @@
         "RP": "2026-10-16"
       }
     },
+    "26320.9876": {
+      "release": "11 26H2",
+      "channels": {
+        "Beta": "2026-11-06"
+      },
+      "enablement": true
+    },
     "26340.9212": {
       "release": "11 26H2",
       "channels": {
@@ -30244,6 +30251,13 @@
       "release": "11 26H2",
       "channels": {
         "Experimental": "2026-10-30"
+      },
+      "enablement": true
+    },
+    "26340.9882": {
+      "release": "11 26H2",
+      "channels": {
+        "Experimental": "2026-11-06"
       },
       "enablement": true
     },
@@ -30554,6 +30568,13 @@
       },
       "enablement": true
     },
+    "28020.3445": {
+      "release": "11 26H1",
+      "channels": {
+        "Beta (26H1)": "2026-11-06"
+      },
+      "enablement": true
+    },
     "28120.2242": {
       "release": "11 26H1",
       "channels": {
@@ -30684,6 +30705,13 @@
       "release": "11 26H1",
       "channels": {
         "Experimental (26H1)": "2026-10-30"
+      },
+      "enablement": true
+    },
+    "28120.3454": {
+      "release": "11 26H1",
+      "channels": {
+        "Experimental (26H1)": "2026-11-06"
       },
       "enablement": true
     },
@@ -30866,6 +30894,13 @@
       "release": "11 Future Platforms",
       "channels": {
         "Experimental (Future Platforms)": "2026-10-30"
+      },
+      "enablement": true
+    },
+    "29704.1000": {
+      "release": "11 Future Platforms",
+      "channels": {
+        "Experimental (Future Platforms)": "2026-11-06"
       },
       "enablement": true
     }
