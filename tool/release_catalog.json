@@ -12691,6 +12691,94 @@
         }
       },
       "cves": {
+        "KB5132061": {
+          "total": 1,
+          "all_ids": [
+            "CVE-2026-111497"
+          ],
+          "critical": 1,
+          "exploited": [],
+          "critical_ids": [
+            "CVE-2026-111497"
+          ],
+          "disclosed": [
+            "CVE-2026-111497"
+          ],
+          "exploited_unknown": [],
+          "disclosed_unknown": []
+        },
+        "KB5132043": {
+          "total": 1,
+          "all_ids": [
+            "CVE-2026-111497"
+          ],
+          "critical": 1,
+          "exploited": [],
+          "critical_ids": [
+            "CVE-2026-111497"
+          ],
+          "disclosed": [
+            "CVE-2026-111497"
+          ],
+          "exploited_unknown": [],
+          "disclosed_unknown": []
+        },
+        "KB5131085": {
+          "total": 1,
+          "all_ids": [
+            "CVE-2026-111497"
+          ],
+          "critical": 0,
+          "exploited": [],
+          "critical_ids": [],
+          "disclosed": [
+            "CVE-2026-111497"
+          ],
+          "exploited_unknown": [],
+          "disclosed_unknown": []
+        },
+        "KB5131096": {
+          "total": 1,
+          "all_ids": [
+            "CVE-2026-111497"
+          ],
+          "critical": 0,
+          "exploited": [],
+          "critical_ids": [],
+          "disclosed": [
+            "CVE-2026-111497"
+          ],
+          "exploited_unknown": [],
+          "disclosed_unknown": []
+        },
+        "KB5131087": {
+          "total": 1,
+          "all_ids": [
+            "CVE-2026-111497"
+          ],
+          "critical": 0,
+          "exploited": [],
+          "critical_ids": [],
+          "disclosed": [
+            "CVE-2026-111497"
+          ],
+          "exploited_unknown": [],
+          "disclosed_unknown": []
+        },
+        "KB5132059": {
+          "total": 1,
+          "all_ids": [
+            "CVE-2026-111497"
+          ],
+          "critical": 0,
+          "exploited": [],
+          "critical_ids": [],
+          "disclosed": [
+            "CVE-2026-111497"
+          ],
+          "exploited_unknown": [],
+          "disclosed_unknown": []
+        },
         "KB5126653": {
           "total": 965,
           "all_ids": [
@@ -23513,7 +23601,7 @@
     }
   },
   "schema": 2,
-  "checked_utc": "2026-11-11T00:54:42Z",
+  "checked_utc": "2026-11-12T19:54:25Z",
   "sources": [
     "https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information",
     "https://learn.microsoft.com/en-us/windows/release-health/release-information",
