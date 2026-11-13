@@ -23602,7 +23602,7 @@
     }
   },
   "schema": 2,
-  "checked_utc": "2026-11-13T02:09:09Z",
+  "checked_utc": "2026-11-13T18:06:00Z",
   "sources": [
     "https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information",
     "https://learn.microsoft.com/en-us/windows/release-health/release-information",
@@ -33959,6 +33959,12 @@
         "RP": "2026-10-16"
       }
     },
+    "26200.10066": {
+      "release": "11 25H2",
+      "channels": {
+        "RP": "2026-11-13"
+      }
+    },
     "26220.5770": {
       "release": "11 25H2",
       "channels": {
@@ -34531,6 +34537,12 @@
         "RP": "2026-10-16"
       }
     },
+    "26300.10066": {
+      "release": "11 26H2",
+      "channels": {
+        "RP": "2026-11-13"
+      }
+    },
     "26320.9876": {
       "release": "11 26H2",
       "channels": {
@@ -34668,6 +34680,12 @@
       "release": "11 26H1",
       "channels": {
         "RP": "2026-10-16"
+      }
+    },
+    "28000.3612": {
+      "release": "11 26H1",
+      "channels": {
+        "RP": "2026-11-13"
       }
     },
     "28020.1362": {
@@ -34936,6 +34954,13 @@
       },
       "enablement": true
     },
+    "28020.3532": {
+      "release": "11 26H1",
+      "channels": {
+        "Beta (26H1)": "2026-11-13"
+      },
+      "enablement": true
+    },
     "28120.2242": {
       "release": "11 26H1",
       "channels": {
@@ -35073,6 +35098,13 @@
       "release": "11 26H1",
       "channels": {
         "Experimental (26H1)": "2026-11-06"
+      },
+      "enablement": true
+    },
+    "28120.3542": {
+      "release": "11 26H1",
+      "channels": {
+        "Experimental (26H1)": "2026-11-13"
       },
       "enablement": true
     },
@@ -35262,6 +35294,13 @@
       "release": "11 Future Platforms",
       "channels": {
         "Experimental (Future Platforms)": "2026-11-06"
+      },
+      "enablement": true
+    },
+    "29708.1001": {
+      "release": "11 Future Platforms",
+      "channels": {
+        "Experimental (Future Platforms)": "2026-11-13"
       },
       "enablement": true
     }
