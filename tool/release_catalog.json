@@ -23391,7 +23391,8 @@
       "final_free_build": "22631.7711",
       "final_free_kb": "KB5131087",
       "final_free_date": "2026-11-10",
-      "eligible_for_feature": true
+      "eligible_for_feature": true,
+      "ended": true
     },
     "22621": {
       "name": "11 22H2",
@@ -23601,7 +23602,7 @@
     }
   },
   "schema": 2,
-  "checked_utc": "2026-11-12T19:54:25Z",
+  "checked_utc": "2026-11-13T02:09:09Z",
   "sources": [
     "https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information",
     "https://learn.microsoft.com/en-us/windows/release-health/release-information",
