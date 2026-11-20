@@ -1,10 +1,10 @@
 {
   "schema": 2,
-  "version": "2026-11-19T2037Z",
+  "version": "2026-11-20T2017Z",
   "current_cycle": "2026-11",
-  "checked_utc": "2026-11-19T20:37:06Z",
-  "catalog_url": "catalog/catalog-2026-11-19T2037Z.json",
-  "sha256": "823234f0ce0574c8324f2409da65dd0f211a291e015b589a3460bcd5e68ba867",
-  "content_key": "ccdb16bade6b2db2029d863a1a18b0ebd1e3b7c361aa7e4972e1d516a24573db",
-  "previous": "catalog/catalog-2026-11-16T2201Z.json"
+  "checked_utc": "2026-11-20T20:17:57Z",
+  "catalog_url": "catalog/catalog-2026-11-20T2017Z.json",
+  "sha256": "e9f5941601c0141b666e8dc3991eaa187450ccfc2875738900485995d8812d18",
+  "content_key": "ca661d38c064c3a8c6da63ce7aeb9e3ecab66287c75acc5752fbffb400c42934",
+  "previous": "catalog/catalog-2026-11-19T2037Z.json"
 }
